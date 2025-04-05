@@ -57,7 +57,7 @@ class TwoPlayerPong(gym.Env):
     
 
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
 from keras.optimizers import Adam
 
 class DQNAgent:
@@ -68,6 +68,18 @@ class DQNAgent:
 
     def _build_model(self):
         model = Sequential()
+        model.add(Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=(224, 224, 3)))
+        model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D((2, 2)))
+        model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D((2, 2)))
+    
+        # More layers...
+        model.add(Flatten())
+
+
+
         model.add(Dense(24, input_dim=self.state_size, activation='relu'))
         model.add(Dense(24, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
