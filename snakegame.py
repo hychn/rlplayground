@@ -1,4 +1,5 @@
 import numpy as np
+import gym
 
 class snake:
     def __init__(self, body, direction, representation):
@@ -11,7 +12,7 @@ class snake:
 
 def printmap(map):
     char_map = {0: ' ', 1: '#', 2: 'S', 
-                3: 's', 8: 'M', 9: 'm'}
+                3: 's', 4: 'M', 5: 'm'}
 
     # Convert numbers to characters
     char_matrix = np.vectorize(char_map.get)(map)
@@ -21,29 +22,41 @@ def printmap(map):
         print(' '.join(row))
 
 
-class game:
-    #TODO 
-    #def _get_obs(self): 
-    #     returns np array input to model
-    #def step(self, action1, action2)
+input2direction = {None:None, 0:np.array([0,1]), 1:np.array([-1,0]), 2:np.array([0,-1]), 3:np.array([1,0])}
+class game(gym.Env):
 
+    def __init__(self, boardsize=15, timelimit=50, verbose=False):
+        super(game, self).__init__()
+        self.action_space = gym.spaces.Discrete(4)  # Actions: [UP, DOWN, STAY]
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(boardsize+2,boardsize+2,6), dtype=np.uint8)
+        self.boardsize = boardsize
+        self.verbose = verbose
+        self.timelimit = timelimit
+        self.reset()
 
-    def __init__(self):
-        self.p1 = snake(body = 10*[(1,1)], direction=(0,1), representation=[2,3])
-        self.p2 = snake(body = 5*[(8,1)], direction=(0,1), representation=[4,5])
+    def reset(self):
+        self.p1 = snake(body = 5*[(3,5)], direction=(0,1), representation=[2,3])
+        self.p2 = snake(body = 5*[(9,5)], direction=(0,1), representation=[4,5])
         self.map = self.blankmap()
+        self.history = []
+        self.time = 0
+        return self._get_obs()
 
-    def get_obs(self):
+    def _get_obs(self):
         return np.eye(6)[self.map]
 
 
     def blankmap(self):
-        map = np.zeros((30,30))
+        map = np.zeros((self.boardsize, self.boardsize), dtype=np.int16)
         map = np.pad(map,pad_width=((1,1),(1,1)),constant_values=1)
         return map
+    
 
     def step(self, input1, input2):
-        #return self._get_obs(), reward1, reward2, done, {}
+        self.history.append( (input1, input2))
+        input1 = input2direction[input1]
+        input2 = input2direction[input2]
+
         reward1, reward2, done = 0,0,False
 
         p1,p2 = self.p1, self.p2
@@ -55,13 +68,15 @@ class game:
         if self.collision(p2, p1, self.map):p2.alive = False
         
         if p1.alive and not p2.alive:
-            reward1=1, reward2=-1, done=True
+            reward1=1; reward2=-1; done=True
         if p2.alive and not p1.alive:
-            reward1=-1, reward2=1, done=True
+            reward1=-1; reward2=1; done=True
         if not p1.alive and not p2.alive:
-            reward1 = 0, reward2 = 0, done=True
+            reward1 = 0; reward2 = 0; done=True
         if p1.alive and p2.alive:
-            reward1 = 0, reward2 = 0. done=False
+            reward1 = 0; reward2 = 0; done=False
+        if self.time >= self.timelimit:
+            reward1 = 0; reward2 = 0; done=True 
 
         #update snakes
         for player in [p1,p2]:
@@ -79,7 +94,9 @@ class game:
                 map[tuple(part)] = snake.repr_tail
 
         self.map = map
-        return self._get_obs(), reward1, reward2, done, {}
+        if self.verbose: printmap(map)
+        self.time+=1
+        return self._get_obs(), reward1, reward2, done, {'time':self.time}
 
     def collision(self, p1, p2, map):
         p1nextheadlocation = p1.direction+p1.body[0]
@@ -90,10 +107,3 @@ class game:
             return True
         else:
             return False
-
-#import time
-#game = game()
-#for i in range(100):
-    #game.update()
-    #time.sleep(.5)
-

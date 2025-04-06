@@ -16,15 +16,15 @@ with term.fullscreen(), term.hidden_cursor(), term.cbreak():
         code = key.code if key else None
         newdir = None
         if code == term.KEY_UP:
-            newdir=np.array([-1,0])
+            newdir=1
         elif code == term.KEY_DOWN:
-            newdir=np.array([1,0])
+            newdir=3
         elif code == term.KEY_LEFT:
-            newdir=np.array([0,-1])
+            newdir=2
         elif code == term.KEY_RIGHT:
-            newdir=np.array([0,1])
+            newdir=0
 
-        game.update(newdir, newdir)
+        game.step(newdir, newdir)
 
         char_map = {0: ' ', 1: '#', 2: 'S', 3: 's', 4: 'M', 5: 'm'}
         char_matrix = np.vectorize(char_map.get)(game.map)
